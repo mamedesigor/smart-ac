@@ -14,7 +14,7 @@ def requestfn():
         return jsonify(data)
 
     if request.method == 'POST':
-        data = request.json
+        data = request.data
         with open('data.json', 'w') as f:
             json.dump(data, f)
         return 'ok', 200
