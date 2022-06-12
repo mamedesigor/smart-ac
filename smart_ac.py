@@ -22,6 +22,9 @@ with open("config.h", "r") as config:
             elif word == "TEMP2_TPC":
                 TEMP2_TPC = splitted_line[i+1].replace('"', '')
                 MQTT_TOPICS.append((TEMP2_TPC, 0))
+            elif word == "CCS811":
+                CCS811 = splitted_line[i+1].replace('"', '')
+                MQTT_TOPICS.append((CCS811, 0))
 
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code " + str(rc))
