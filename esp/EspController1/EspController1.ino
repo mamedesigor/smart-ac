@@ -52,10 +52,15 @@ void setup() {
 }
 
 void loop() {
+	while (WiFi.status() != WL_CONNECTED) {
+		Serial.println("Reconnecting to WiFi..");
+		delay(500);
+		WiFi.reconnect();
+	}
+
 	mqttClient.loop();
 
 	if (five_seconds_delay()) {
-		//dtostrf(i, 6, 2, mqttMsg);
 		uint16_t eco2, etvoc, errstat, raw;
 		ccs811.read(&eco2, &etvoc, &errstat, &raw);
 		Serial.print("CCS811: ");
