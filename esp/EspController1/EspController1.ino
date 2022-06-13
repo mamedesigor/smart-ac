@@ -6,11 +6,10 @@
 
 long before = 0;
 
-char msg[20];
-
 CCS811 ccs811(-1);
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
+char mqttMsg[20];
 
 void setup() {
 	Serial.begin(115200);
@@ -56,7 +55,7 @@ void loop() {
 	mqttClient.loop();
 
 	if (five_seconds_delay()) {
-		//dtostrf(i, 6, 2, msg);
+		//dtostrf(i, 6, 2, mqttMsg);
 		uint16_t eco2, etvoc, errstat, raw;
 		ccs811.read(&eco2, &etvoc, &errstat, &raw);
 		Serial.print("CCS811: ");
@@ -73,8 +72,8 @@ void loop() {
 		}
 		Serial.println();
 
-		sprintf(msg, "eco2=%dppm etvoc=%d", eco2, etvoc);
-		mqttClient.publish(CCS811_TOPIC, msg);
+		sprintf(mqttMsg, "eco2=%dppm etvoc=%d", eco2, etvoc);
+		mqttClient.publish(CCS811_TOPIC, mqttMsg);
 	}
 }
 
