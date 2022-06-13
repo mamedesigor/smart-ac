@@ -9,7 +9,7 @@ long before = 0;
 CCS811 ccs811(-1);
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
-char mqttMsg[20];
+char mqttMsg[40];
 
 void setup() {
 	Serial.begin(115200);
@@ -30,7 +30,7 @@ void setup() {
 		delay(2000);
 	}
 
-	//setup i2c
+	//setup I2C
 	Serial.print("Setup: I2C ");
 	Wire.begin();
 	Serial.println("OK");
@@ -52,10 +52,18 @@ void setup() {
 }
 
 void loop() {
+	//reconnect to wifi
 	while (WiFi.status() != WL_CONNECTED) {
 		Serial.println("Reconnecting to WiFi..");
 		delay(500);
 		WiFi.reconnect();
+	}
+
+	//reconnect mqqt client
+	while (!mqttClient.connected()) {
+		Serial.println("Reconnecting to MQTT...");
+		mqttClient.connect("mqtt connected!");
+		delay(2000);
 	}
 
 	mqttClient.loop();
