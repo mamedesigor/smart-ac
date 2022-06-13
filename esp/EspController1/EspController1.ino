@@ -4,8 +4,6 @@
 #include "WiFi.h"
 #include "config.h"
 
-const char* topic = "ccs811";
-
 long before = 0;
 
 char msg[20];
@@ -76,7 +74,7 @@ void loop() {
 		Serial.println();
 
 		sprintf(msg, "eco2=%dppm etvoc=%d", eco2, etvoc);
-		mqttClient.publish(topic, msg);
+		mqttClient.publish(CCS811_TOPIC, msg);
 	}
 }
 
