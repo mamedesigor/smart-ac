@@ -85,7 +85,7 @@ void loop() {
 		}
 		Serial.println();
 
-		sprintf(mqttMsg, "eco2=%dppm etvoc=%d", eco2, etvoc);
+		sprintf(mqttMsg, "{\"eco2\": \"%hu\", \"etvoc\": \"%hu\"}", eco2, etvoc);
 		mqttClient.publish(CCS811_TOPIC, mqttMsg);
 	}
 }
