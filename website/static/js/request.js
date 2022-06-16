@@ -24,4 +24,6 @@ function update_fields() {
 		});
 }
 
-update_fields();
+setInterval(function(){
+	update_fields();
+}, 3000);
