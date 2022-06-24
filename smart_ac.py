@@ -5,6 +5,7 @@ from datetime import datetime
 import time
 import json
 import config
+import sqlite3
 
 buffer = config.buffer
 
@@ -18,8 +19,32 @@ def on_message(client, userdata, msg):
     json_string.update({"timestamp": str(timestamp)})
     buffer.get(msg.topic).append(json_string)
 
+def add_to_db():
+    db = sqlite3.connect("sqlite3.db")
+    cursor = db.cursor()
+    for mqtt_topic in buffer:
+        if buffer[mqtt_topic]:
+
+            ### CCS811 ###
+            if mqtt_topic == config.CCS811_TOPIC:
+                list = buffer[mqtt_topic]
+                for item in list:
+                    eco2 = item.get("eco2")
+                    etvoc = item.get("etvoc")
+                    timestamp = item.get("timestamp")
+                    print(eco2 + " " + etvoc + " " + timestamp)
+                    cursor.execute("CREATE TABLE IF NOT EXISTS " + config.CCS811_TOPIC + " (eco2 real, etvoc real, timestamp text)")
+                    cursor.execute("INSERT INTO " + config.CCS811_TOPIC + " VALUES(?,?,?)",(eco2, etvoc, timestamp))
+                buffer[mqtt_topic] = []
+    db.commit();
+    db.close();
+
 client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
 client.connect(config.MQTT_BROKER, config.MQTT_PORT, 60)
-client.loop_forever()
+client.loop_start()
+
+while True:
+    add_to_db()
+    time.sleep(1)
