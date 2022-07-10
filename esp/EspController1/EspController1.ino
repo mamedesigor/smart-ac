@@ -13,14 +13,7 @@ char mqttMsg[40];
 
 void setup() {
 	Serial.begin(115200);
-
-	//connect to wifi
-	WiFi.begin(SSID, PASSWORD);
-	while (WiFi.status() != WL_CONNECTED) {
-		delay(500);
-		Serial.println("Connecting to WiFi..");
-	}
-	Serial.println("Connected to WiFi!");
+	setupWifi();
 
 	//set up mqtt server
 	mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
@@ -88,6 +81,15 @@ void loop() {
 		sprintf(mqttMsg, "{\"eco2\": \"%hu\", \"etvoc\": \"%hu\"}", eco2, etvoc);
 		mqttClient.publish(CCS811_TOPIC, mqttMsg);
 	}
+}
+
+void setupWifi() {
+	WiFi.begin(SSID, PASSWORD);
+	while (WiFi.status() != WL_CONNECTED) {
+		delay(500);
+		Serial.println("Connecting to WiFi..");
+	}
+	Serial.println("Connected to WiFi!");
 }
 
 bool five_seconds_delay() {
