@@ -4,6 +4,7 @@
 #include "WiFi.h"
 #include "config.h"
 
+long lastMqttReconnectAttempt = 0;
 long before = 0;
 
 CCS811 ccs811(-1);
@@ -14,14 +15,7 @@ char mqttMsg[40];
 void setup() {
 	Serial.begin(115200);
 	setupWifi();
-
-	//set up mqtt server
-	mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
-	while (!mqttClient.connected()) {
-		Serial.println("Connecting to MQTT...");
-		mqttClient.connect("mqtt connected!");
-		delay(2000);
-	}
+	setupMqtt();
 
 	//setup I2C
 	Serial.print("Setup: I2C ");
@@ -52,14 +46,17 @@ void loop() {
 		WiFi.reconnect();
 	}
 
-	//reconnect mqqt client
-	while (!mqttClient.connected()) {
-		Serial.println("Reconnecting to MQTT...");
-		mqttClient.connect("mqtt connected!");
-		delay(2000);
+	if (!mqttClient.connected()) {
+		long now = millis();
+		if (now - lastMqttReconnectAttempt > 2000) {
+			lastMqttReconnectAttempt = now;
+			if (mqttReconnect()) {
+				lastMqttReconnectAttempt = 0;
+			}
+		}
+	} else {
+		mqttClient.loop();
 	}
-
-	mqttClient.loop();
 
 	if (five_seconds_delay()) {
 		uint16_t eco2, etvoc, errstat, raw;
@@ -90,6 +87,20 @@ void setupWifi() {
 		Serial.println("Connecting to WiFi..");
 	}
 	Serial.println("Connected to WiFi!");
+}
+
+void setupMqtt() {
+	mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
+	//mqttClient.setCallback(callback);
+}
+
+boolean mqttReconnect() {
+	Serial.println("Connecting to MQTT...");
+	if (mqttClient.connect("EspController1")) {
+		//mqttClient.subscribe("topics");
+		Serial.println("MQTT connected!");
+	}
+	return mqttClient.connected();
 }
 
 bool five_seconds_delay() {
