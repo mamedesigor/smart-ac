@@ -4,6 +4,8 @@
 #include "WiFi.h"
 #include "config.h"
 
+int ledPin = 32;
+
 long lastMqttReconnectAttempt = 0;
 long timer = 0;
 
@@ -14,6 +16,7 @@ char ccs811Reading[40];
 
 void setup() {
 	Serial.begin(115200);
+	pinMode(ledPin, OUTPUT);
 	setupWifi();
 	setupMqtt();
 	setupI2c();
@@ -43,6 +46,8 @@ void loop() {
 		if (fiveSecondsDelay()) {
 			if(ccs811Read()) mqttClient.publish(CCS811_TOPIC, ccs811Reading);
 		}
+
+		blinkLed();
 	}
 }
 
@@ -92,9 +97,16 @@ boolean mqttReconnect() {
 	return mqttClient.connected();
 }
 
+void blinkLed() {
+	digitalWrite(ledPin, HIGH);
+	delay(500);
+	digitalWrite(ledPin, LOW);
+	delay(500);
+}
+
 bool fiveSecondsDelay() {
 	long now = millis();
-	if (now - timer > 5000) {
+	if (now - timer > 4000) {
 		timer = now;
 		return true;
 	} return false;
