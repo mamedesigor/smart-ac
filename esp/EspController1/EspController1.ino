@@ -5,7 +5,7 @@
 #include "config.h"
 
 long lastMqttReconnectAttempt = 0;
-long before = 0;
+long timer = 0;
 
 CCS811 ccs811(-1);
 WiFiClient wifiClient;
@@ -103,10 +103,10 @@ boolean mqttReconnect() {
 	return mqttClient.connected();
 }
 
-bool five_seconds_delay() {
+bool fiveSecondsDelay() {
 	long now = millis();
-	if (now - before > 5000) {
-		before = now;
+	if (now - timer > 5000) {
+		timer = now;
 		return true;
 	} return false;
 }
