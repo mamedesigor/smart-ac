@@ -5,6 +5,8 @@
 #include "config.h"
 
 int ledPin = 32;
+bool ledOn = false;
+long ledTimer = 0;
 
 long lastMqttReconnectAttempt = 0;
 long timer = 0;
@@ -98,10 +100,20 @@ boolean mqttReconnect() {
 }
 
 void blinkLed() {
-	digitalWrite(ledPin, HIGH);
-	delay(500);
-	digitalWrite(ledPin, LOW);
-	delay(500);
+	long now = millis();
+	if(!ledOn) {
+		if (now - ledTimer > 1000) {
+			ledTimer = now;
+			digitalWrite(ledPin, HIGH);
+			ledOn = true;
+		}
+	} else {
+		if (now - ledTimer > 50) {
+			ledTimer = now;
+			digitalWrite(ledPin, LOW);
+			ledOn = false;
+		}
+	}
 }
 
 bool fiveSecondsDelay() {
