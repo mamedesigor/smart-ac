@@ -54,6 +54,10 @@ void loop() {
 }
 
 void setupWifi() {
+	Serial.println("Connecting to WiFi in 2 seconds..");
+	delay(1000);
+	Serial.println("Connecting to WiFi in 1 seconds..");
+	delay(1000);
 	WiFi.begin(SSID, PASSWORD);
 	while (WiFi.status() != WL_CONNECTED) {
 		delay(500);
