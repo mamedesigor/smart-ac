@@ -56,7 +56,13 @@ with open("config.h", "r") as config:
                 PIR_TOPIC = splitted_line[i+1].replace('"', '')
                 MQTT_TOPICS.append((PIR_TOPIC, 0))
                 buffer.update({PIR_TOPIC: []})
-            elif word == "IR_TOPIC":
-                IR_TOPIC = splitted_line[i+1].replace('"', '')
-                MQTT_TOPICS.append((IR_TOPIC, 0))
-                buffer.update({IR_TOPIC: []})
+            elif word == "ESP_CONTROLLER_1_TOPIC":
+                ESP_CONTROLLER_1_TOPIC = splitted_line[i+1].replace('"', '')
+            elif word == "ESP_CONTROLLER_2_TOPIC":
+                ESP_CONTROLLER_2_TOPIC = splitted_line[i+1].replace('"', '')
+            elif word == "ESP_CONTROLLER_3_TOPIC":
+                ESP_CONTROLLER_3_TOPIC = splitted_line[i+1].replace('"', '')
+            elif word == "RPI_TOPIC":
+                RPI_TOPIC = splitted_line[i+1].replace('"', '')
+            elif word == "IRRAW_TOPIC":
+                IRRAW_TOPIC = splitted_line[i+1].replace('"', '')
