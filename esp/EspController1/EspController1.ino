@@ -1,8 +1,13 @@
+#include <Arduino.h>
+#include <IRremoteESP8266.h>
+#include <IRsend.h>
 #include <Wire.h>
 #include <PubSubClient.h>
 #include "ccs811.h"
 #include "WiFi.h"
 #include "config.h"
+
+#define IR_PULSE_MAX 5
 
 int ledPin = 32;
 bool ledOn = false;
@@ -11,12 +16,16 @@ long ledTimer = 0;
 long lastMqttReconnectAttempt = 0;
 long timer = 0;
 
+const uint16_t kIrLed = 4;
+IRsend irsend(kIrLed);
+
 CCS811 ccs811(-1);
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 char ccs811Reading[40];
 
 void setup() {
+	irsend.begin();
 	Serial.begin(115200);
 	pinMode(ledPin, OUTPUT);
 	setupWifi();
@@ -26,14 +35,12 @@ void setup() {
 }
 
 void loop() {
-	//reconnect to wifi
 	while (WiFi.status() != WL_CONNECTED) {
 		Serial.println("Reconnecting to WiFi..");
 		delay(500);
 		WiFi.reconnect();
 	}
 
-	//reconnect to mqtt server
 	if (!mqttClient.connected()) {
 		long now = millis();
 		if (now - lastMqttReconnectAttempt > 2000) {
@@ -68,7 +75,8 @@ void setupWifi() {
 
 void setupMqtt() {
 	mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
-	//mqttClient.setCallback(callback);
+	mqttClient.setCallback(callback);
+	mqttClient.setBufferSize(1024);
 }
 
 void setupI2c() {
@@ -97,7 +105,7 @@ void setupCcs811() {
 boolean mqttReconnect() {
 	Serial.println("Connecting to MQTT...");
 	if (mqttClient.connect("EspController1")) {
-		//mqttClient.subscribe("topics");
+		mqttClient.subscribe(IRRAW_TOPIC);
 		Serial.println("MQTT connected!");
 	}
 	return mqttClient.connected();
@@ -122,7 +130,7 @@ void blinkLed() {
 
 bool fiveSecondsDelay() {
 	long now = millis();
-	if (now - timer > 4000) {
+	if (now - timer > 5000) {
 		timer = now;
 		return true;
 	} return false;
@@ -148,4 +156,35 @@ bool ccs811Read() {
 	}
 	Serial.println();
 	return false;
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+	if (String(topic) == IRRAW_TOPIC) {
+		uint16_t irRawData[150];
+		uint8_t irRawDataIndex = 0;
+		char pulse[IR_PULSE_MAX];
+		uint8_t pulseIndex = 0;
+		for (int i = 0; i < length; i++) {
+			char c = (char)payload[i];
+			if(c != ';') {
+				pulse[pulseIndex] = c;
+				pulseIndex++;
+				if(pulseIndex > IR_PULSE_MAX) {
+					Serial.println("ERROR: ir pulse bigger than 5 digits");
+					return;
+				}
+			} else {
+				pulseIndex = 0;
+				irRawData[irRawDataIndex] = atoi(pulse);
+				irRawDataIndex++;
+				pulse[0] = pulse[1] = pulse[2] = pulse[3] = pulse[4] = '\0';
+			}
+		}
+		Serial.println("mqtt received: irraw");
+		Serial.print("msg size: ");
+		Serial.println(length);
+		Serial.print("number of pulses: ");
+		Serial.println(irRawDataIndex);
+		irsend.sendRaw(irRawData, irRawDataIndex, 38);
+	}
 }
