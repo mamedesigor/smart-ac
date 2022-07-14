@@ -41,23 +41,24 @@ void loop() {
 		WiFi.reconnect();
 	}
 
-	if (!mqttClient.connected()) {
-		long now = millis();
-		if (now - lastMqttReconnectAttempt > 2000) {
-			lastMqttReconnectAttempt = now;
-			if (mqttReconnect()) {
-				lastMqttReconnectAttempt = 0;
-			}
+	while (!mqttClient.connected()) {
+		if (mqttClient.connect(ESP_CONTROLLER_1_TOPIC)) {
+			mqttClient.subscribe(IRRAW_TOPIC);
+			Serial.println("MQTT connected!");
+		} else {
+			Serial.println("MQTT connection failed! reconnecting..");
+			Serial.println(mqttClient.state());
+			delay(2000);
 		}
-	} else {
-		mqttClient.loop();
-
-		if (fiveSecondsDelay()) {
-			if(ccs811Read()) mqttClient.publish(CCS811_TOPIC, ccs811Reading);
-		}
-
-		blinkLed();
 	}
+
+	mqttClient.loop();
+
+	if (fiveSecondsDelay()) {
+		if(ccs811Read()) mqttClient.publish(CCS811_TOPIC, ccs811Reading);
+	}
+
+	blinkLed();
 }
 
 void setupWifi() {
@@ -100,15 +101,6 @@ void setupCcs811() {
 
 	//CCS811 version
 	Serial.print("CCS811 library version: "); Serial.println(CCS811_VERSION);
-}
-
-boolean mqttReconnect() {
-	Serial.println("Connecting to MQTT...");
-	if (mqttClient.connect("EspController1")) {
-		mqttClient.subscribe(IRRAW_TOPIC);
-		Serial.println("MQTT connected!");
-	}
-	return mqttClient.connected();
 }
 
 void blinkLed() {
