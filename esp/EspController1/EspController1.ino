@@ -13,94 +13,93 @@ int ledPin = 32;
 bool ledOn = false;
 long ledTimer = 0;
 
-long lastMqttReconnectAttempt = 0;
-long timer = 0;
+long sensorTimer = 0;
 
 const uint16_t kIrLed = 4;
 IRsend irsend(kIrLed);
 
+int sensorDelay = 5000;
+
 CCS811 ccs811(-1);
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
-char ccs811Reading[40];
+char msg[100];
 
 void setup() {
+	//set up infra red
 	irsend.begin();
-	Serial.begin(115200);
+
+	//set up led indicator
 	pinMode(ledPin, OUTPUT);
-	setupWifi();
-	setupMqtt();
-	setupI2c();
-	setupCcs811();
-}
 
-void loop() {
-	while (WiFi.status() != WL_CONNECTED) {
-		Serial.println("Reconnecting to WiFi..");
-		delay(500);
-		WiFi.reconnect();
-	}
+	//wifi
+	delay(2000);
+	WiFi.begin(SSID, PASSWORD);
+	while (WiFi.status() != WL_CONNECTED) delay(500);
 
+	//set up mqtt
+	mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
+	mqttClient.setCallback(callback);
+	mqttClient.setBufferSize(1024);
 	while (!mqttClient.connected()) {
 		if (mqttClient.connect(ESP_CONTROLLER_1_TOPIC)) {
 			mqttClient.subscribe(IRRAW_TOPIC);
-			Serial.println("MQTT connected!");
+			mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "WiFi and MQTT are up!");
+			delay(100);
 		} else {
-			Serial.println("MQTT connection failed! reconnecting..");
-			Serial.println(mqttClient.state());
 			delay(2000);
 		}
 	}
 
+	//set up i2c
+	Wire.begin();
+	mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "Setup [I2C]: OK");
+	delay(100);
+
+	//set up ccs811
+	ccs811.set_i2cdelay(50);
+	if (ccs811.begin()) {
+		mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "Enable [CCS811]: OK");
+	} else {
+		mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "Enable [CCS811]: FAILED");
+	}
+	delay(100);
+	if (ccs811.start(CCS811_MODE_1SEC)) {
+		mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "Start [CCS811]: OK");
+	} else {
+		mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "Start [CCS811]: FAILED");
+	}
+	delay(100);
+}
+
+void loop() {
+	if (WiFi.status() != WL_CONNECTED || !mqttClient.connected()) reconnect();
+
 	mqttClient.loop();
 
-	if (fiveSecondsDelay()) {
-		if(ccs811Read()) mqttClient.publish(CCS811_TOPIC, ccs811Reading);
+	long now = millis();
+	if (now - sensorTimer > sensorDelay) {
+		if(ccs811Read()) mqttClient.publish(CCS811_TOPIC, msg);
+		sensorTimer = now;
 	}
 
 	blinkLed();
 }
 
-void setupWifi() {
-	Serial.println("Connecting to WiFi in 2 seconds..");
-	delay(1000);
-	Serial.println("Connecting to WiFi in 1 seconds..");
-	delay(1000);
-	WiFi.begin(SSID, PASSWORD);
-	while (WiFi.status() != WL_CONNECTED) {
+void reconnect() {
+	while (WiFi.status() != WL_CONNECTED){
+		WiFi.reconnect();
 		delay(500);
-		Serial.println("Connecting to WiFi..");
 	}
-	Serial.println("Connected to WiFi!");
-}
-
-void setupMqtt() {
-	mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
-	mqttClient.setCallback(callback);
-	mqttClient.setBufferSize(1024);
-}
-
-void setupI2c() {
-	Serial.print("Setup: I2C ");
-	Wire.begin();
-	Serial.println("OK");
-}
-
-void setupCcs811() {
-	//enable CCS811
-	bool ok;
-	Serial.print("Setup: CCS811 ");
-	ccs811.set_i2cdelay(50);
-	ok = ccs811.begin();
-	if (ok) Serial.println("OK"); else Serial.println("FAILED");
-
-	//start CCS811
-	Serial.print("Setup: CCS811 start ");
-	ok = ccs811.start(CCS811_MODE_1SEC);
-	if (ok) Serial.println("OK"); else Serial.println("FAILED");
-
-	//CCS811 version
-	Serial.print("CCS811 library version: "); Serial.println(CCS811_VERSION);
+	while (!mqttClient.connected()) {
+		if (mqttClient.connect(ESP_CONTROLLER_1_TOPIC)) {
+			mqttClient.subscribe(IRRAW_TOPIC);
+			mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "WiFi and MQTT are up!");
+			delay(100);
+		} else {
+			delay(2000);
+		}
+	}
 }
 
 void blinkLed() {
@@ -120,33 +119,20 @@ void blinkLed() {
 	}
 }
 
-bool fiveSecondsDelay() {
-	long now = millis();
-	if (now - timer > 5000) {
-		timer = now;
-		return true;
-	} return false;
-}
-
 bool ccs811Read() {
 	uint16_t eco2, etvoc, errstat, raw;
 	ccs811.read(&eco2, &etvoc, &errstat, &raw);
-	Serial.print("CCS811: ");
 	if ( errstat == CCS811_ERRSTAT_OK ) {
-		Serial.print("eco2=");  Serial.print(eco2);  Serial.print(" ppm  ");
-		Serial.print("etvoc="); Serial.print(etvoc); Serial.print(" ppb  ");
-		Serial.println();
-		sprintf(ccs811Reading, "{\"eco2\": \"%hu\", \"etvoc\": \"%hu\"}", eco2, etvoc);
+		sprintf(msg, "{\"eco2\": \"%hu\", \"etvoc\": \"%hu\"}", eco2, etvoc);
 		return true;
 	} else if ( errstat == CCS811_ERRSTAT_OK_NODATA ) {
-		Serial.print("waiting for (new) data");
+		mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "ccs811: waiting for (new) data");
 	} else if ( errstat & CCS811_ERRSTAT_I2CFAIL ) {
-		Serial.print("I2C error");
+		mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "ccs811: I2C error");
 	} else {
-		Serial.print( "error: " );
-		Serial.print( ccs811.errstat_str(errstat) );
+		sprintf(msg, "ccs811 error: %s", ccs811.errstat_str(errstat));
+		mqttClient.publish(ESP_CONTROLLER_1_TOPIC, msg);
 	}
-	Serial.println();
 	return false;
 }
 
@@ -162,7 +148,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
 				pulse[pulseIndex] = c;
 				pulseIndex++;
 				if(pulseIndex > IR_PULSE_MAX) {
-					Serial.println("ERROR: ir pulse bigger than 5 digits");
+					mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "ERROR: ir pulse > 5 digits");
 					return;
 				}
 			} else {
@@ -172,11 +158,8 @@ void callback(char* topic, byte* payload, unsigned int length) {
 				pulse[0] = pulse[1] = pulse[2] = pulse[3] = pulse[4] = '\0';
 			}
 		}
-		Serial.println("mqtt received: irraw");
-		Serial.print("msg size: ");
-		Serial.println(length);
-		Serial.print("number of pulses: ");
-		Serial.println(irRawDataIndex);
+		sprintf(msg, "irraw received - size: %hu pulses: %hu", length, irRawDataIndex);
+		mqttClient.publish(ESP_CONTROLLER_1_TOPIC, msg);
 		irsend.sendRaw(irRawData, irRawDataIndex, 38);
 	}
 }
