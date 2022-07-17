@@ -3,6 +3,7 @@
 #include <IRsend.h>
 #include <Wire.h>
 #include <PubSubClient.h>
+#include <Adafruit_BMP280.h>
 #include "ccs811.h"
 #include "WiFi.h"
 #include "config.h"
@@ -19,6 +20,8 @@ WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 char msg[100];
 
+Adafruit_BMP280 bmp280;
+bool bmp280Began = false;
 CCS811 ccs811(-1);
 long sensorTimer = 0;
 int sensorDelay = 5000;
@@ -68,6 +71,15 @@ void setup() {
 		mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "Start [CCS811]: FAILED");
 	}
 	delay(100);
+
+	//set up bmp280
+	if (bmp280.begin(0x76)) {
+		bmp280Began = true;
+		mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "Begin [BMP280]: OK");
+	} else {
+		mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "Begin [BMP280]: FAILED");
+	}
+	delay(100);
 }
 
 void loop() {
@@ -78,6 +90,7 @@ void loop() {
 	long now = millis();
 	if (now - sensorTimer > sensorDelay) {
 		if(ccs811Read()) mqttClient.publish(CCS811_TOPIC, msg);
+		if(bmp280Read()) mqttClient.publish(BMP280_TOPIC, msg);
 		sensorTimer = now;
 	}
 
@@ -115,6 +128,15 @@ void blinkLed() {
 			ledOn = false;
 		}
 	}
+}
+
+bool bmp280Read() {
+	if (bmp280Began) {
+		float t = bmp280.readTemperature();
+		float p = bmp280.readPressure() / 100.0f;
+		sprintf(msg, "{\"temp1\": \"%.1f\", \"pressure\": \"%.1f\"}", t, p);
+		return true;
+	} else return false;
 }
 
 bool ccs811Read() {
