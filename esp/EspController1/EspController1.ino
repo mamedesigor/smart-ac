@@ -7,23 +7,21 @@
 #include "WiFi.h"
 #include "config.h"
 
-#define IR_PULSE_MAX 5
+const uint8_t IR_PULSE_MAX = 5;
+const uint16_t kIrLed = 4;
+IRsend irsend(kIrLed);
 
 int ledPin = 32;
 bool ledOn = false;
 long ledTimer = 0;
 
-long sensorTimer = 0;
-
-const uint16_t kIrLed = 4;
-IRsend irsend(kIrLed);
-
-int sensorDelay = 5000;
-
-CCS811 ccs811(-1);
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 char msg[100];
+
+CCS811 ccs811(-1);
+long sensorTimer = 0;
+int sensorDelay = 5000;
 
 void setup() {
 	//set up infra red
