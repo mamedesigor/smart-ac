@@ -4,6 +4,7 @@
 #include <Wire.h>
 #include <PubSubClient.h>
 #include <Adafruit_BMP280.h>
+#include "EmonLib.h"
 #include "ccs811.h"
 #include "WiFi.h"
 #include "config.h"
@@ -20,6 +21,10 @@ WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 char msg[100];
 
+EnergyMonitor sct013;
+int sct013Pin = 34;
+double sct013Calib = 4.928;
+bool sct013FirstReading = false;
 Adafruit_BMP280 bmp280;
 bool bmp280Began = false;
 CCS811 ccs811(-1);
@@ -80,6 +85,9 @@ void setup() {
 		mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "Begin [BMP280]: FAILED");
 	}
 	delay(100);
+
+	//set up Energy Monitor (sct013)
+	sct013.current(sct013Pin, sct013Calib);
 }
 
 void loop() {
@@ -91,6 +99,7 @@ void loop() {
 	if (now - sensorTimer > sensorDelay) {
 		if(ccs811Read()) mqttClient.publish(CCS811_TOPIC, msg);
 		if(bmp280Read()) mqttClient.publish(BMP280_TOPIC, msg);
+		if(sct013Read()) mqttClient.publish(SCT013_TOPIC, msg);
 		sensorTimer = now;
 	}
 
@@ -153,6 +162,16 @@ bool ccs811Read() {
 		sprintf(msg, "ccs811 error: %s", ccs811.errstat_str(errstat));
 		mqttClient.publish(ESP_CONTROLLER_1_TOPIC, msg);
 	}
+	return false;
+}
+
+bool sct013Read() {
+	if(sct013FirstReading) {
+		double irms = sct013.calcIrms(1480);
+		sprintf(msg, "{\"amps\": \"%g\"}", irms);
+		return true;
+	}
+	sct013FirstReading = true;
 	return false;
 }
 
