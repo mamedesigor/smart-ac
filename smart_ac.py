@@ -47,6 +47,16 @@ def add_to_db():
                     cursor.execute("CREATE TABLE IF NOT EXISTS " + config.BMP280_TOPIC + " (temp1 real, pressure real, timestamp text)")
                     cursor.execute("INSERT INTO " + config.BMP280_TOPIC + " VALUES(?,?,?)",(temp1, pressure, timestamp))
 
+            ### SCT013 ###
+            if mqtt_topic == config.SCT013_TOPIC:
+                list = buffer[mqtt_topic]
+                for item in list:
+                    amps = item.get("amps")
+                    timestamp = item.get("timestamp")
+                    print(amps + " " + timestamp)
+                    cursor.execute("CREATE TABLE IF NOT EXISTS " + config.SCT013_TOPIC + " (amps real, timestamp text)")
+                    cursor.execute("INSERT INTO " + config.SCT013_TOPIC + " VALUES(?,?)",(amps, timestamp))
+
             buffer[mqtt_topic] = []
     db.commit();
     db.close();
