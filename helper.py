@@ -6,6 +6,24 @@ import sqlite3
 import time
 import json
 from datetime import datetime
+import paho.mqtt.client as mqtt
+import config
+
+buffer = config.buffer
+
+def on_connect(client, userdata, flags, rc):
+    print("Connected with result code " + str(rc))
+    client.subscribe(config.MQTT_TOPICS)
+
+def on_message(client, userdata, msg):
+    print(str(msg.payload.decode("utf-8")));
+
+def mqtt_listener():
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_message = on_message
+    client.connect(config.MQTT_BROKER, config.MQTT_PORT, 60)
+    client.loop_forever()
 
 def send_request():
     url = 'https://www.arcondicionado.cf/request'
@@ -48,4 +66,4 @@ def timed_function(function):
     function()
     print("--- %s seconds ---" % (time.time() - start_time))
 
-timed_function(send_request)
+timed_function(mqtt_listener)
