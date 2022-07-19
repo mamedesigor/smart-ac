@@ -44,14 +44,22 @@ with open("config.h", "r") as config:
                 SCT013_TOPIC = splitted_line[i+1].replace('"', '')
                 MQTT_TOPICS.append((SCT013_TOPIC, 0))
                 buffer.update({SCT013_TOPIC: []})
-            elif word == "REEDSWITCH_TOPIC":
-                REEDSWITCH_TOPIC = splitted_line[i+1].replace('"', '')
-                MQTT_TOPICS.append((REEDSWITCH_TOPIC, 0))
-                buffer.update({REEDSWITCH_TOPIC: []})
-            elif word == "PIR_TOPIC":
-                PIR_TOPIC = splitted_line[i+1].replace('"', '')
-                MQTT_TOPICS.append((PIR_TOPIC, 0))
-                buffer.update({PIR_TOPIC: []})
+            elif word == "MC38_1_TOPIC":
+                MC38_1_TOPIC = splitted_line[i+1].replace('"', '')
+                MQTT_TOPICS.append((MC38_1_TOPIC, 0))
+                buffer.update({MC38_1_TOPIC: []})
+            elif word == "MC38_2_TOPIC":
+                MC38_2_TOPIC = splitted_line[i+1].replace('"', '')
+                MQTT_TOPICS.append((MC38_2_TOPIC, 0))
+                buffer.update({MC38_2_TOPIC: []})
+            elif word == "HCSR501_1_TOPIC":
+                HCSR501_1_TOPIC = splitted_line[i+1].replace('"', '')
+                MQTT_TOPICS.append((HCSR501_1_TOPIC, 0))
+                buffer.update({HCSR501_1_TOPIC: []})
+            elif word == "HCSR501_2_TOPIC":
+                HCSR501_2_TOPIC = splitted_line[i+1].replace('"', '')
+                MQTT_TOPICS.append((HCSR501_2_TOPIC, 0))
+                buffer.update({HCSR501_2_TOPIC: []})
             elif word == "ESP_CONTROLLER_1_TOPIC":
                 ESP_CONTROLLER_1_TOPIC = splitted_line[i+1].replace('"', '')
             elif word == "ESP_CONTROLLER_2_TOPIC":
