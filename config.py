@@ -40,14 +40,10 @@ with open("config.h", "r") as config:
                 MICS6814_TOPIC = splitted_line[i+1].replace('"', '')
                 MQTT_TOPICS.append((MICS6814_TOPIC, 0))
                 buffer.update({MICS6814_TOPIC: []})
-            elif word == "SCT013_1_TOPIC":
-                SCT013_1_TOPIC = splitted_line[i+1].replace('"', '')
-                MQTT_TOPICS.append((SCT013_1_TOPIC, 0))
-                buffer.update({SCT013_1_TOPIC: []})
-            elif word == "SCT013_2_TOPIC":
-                SCT013_2_TOPIC = splitted_line[i+1].replace('"', '')
-                MQTT_TOPICS.append((SCT013_2_TOPIC, 0))
-                buffer.update({SCT013_2_TOPIC: []})
+            elif word == "SCT013_TOPIC":
+                SCT013_TOPIC = splitted_line[i+1].replace('"', '')
+                MQTT_TOPICS.append((SCT013_TOPIC, 0))
+                buffer.update({SCT013_TOPIC: []})
             elif word == "REEDSWITCH_TOPIC":
                 REEDSWITCH_TOPIC = splitted_line[i+1].replace('"', '')
                 MQTT_TOPICS.append((REEDSWITCH_TOPIC, 0))
