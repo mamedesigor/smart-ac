@@ -35,7 +35,19 @@ def add_to_db():
                     print(eco2 + " " + etvoc + " " + timestamp)
                     cursor.execute("CREATE TABLE IF NOT EXISTS " + config.CCS811_TOPIC + " (eco2 real, etvoc real, timestamp text)")
                     cursor.execute("INSERT INTO " + config.CCS811_TOPIC + " VALUES(?,?,?)",(eco2, etvoc, timestamp))
-                buffer[mqtt_topic] = []
+
+            ### BMP280 ###
+            if mqtt_topic == config.BMP280_TOPIC:
+                list = buffer[mqtt_topic]
+                for item in list:
+                    temp1 = item.get("temp1")
+                    pressure = item.get("pressure")
+                    timestamp = item.get("timestamp")
+                    print(temp1 + " " + pressure + " " + timestamp)
+                    cursor.execute("CREATE TABLE IF NOT EXISTS " + config.BMP280_TOPIC + " (temp1 real, pressure real, timestamp text)")
+                    cursor.execute("INSERT INTO " + config.BMP280_TOPIC + " VALUES(?,?,?)",(temp1, pressure, timestamp))
+
+            buffer[mqtt_topic] = []
     db.commit();
     db.close();
 
