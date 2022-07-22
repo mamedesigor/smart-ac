@@ -10,12 +10,17 @@ WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 char msg[100];
 
+int mc38Pin = 33;
+
 long sensorTimer = 0;
 int sensorDelay = 5000;
 
 void setup() {
 	//set up led indicator
 	pinMode(ledPin, OUTPUT);
+
+	//set up mc38
+	pinMode(mc38Pin, INPUT);
 
 	//wifi
 	delay(2000);
@@ -24,12 +29,9 @@ void setup() {
 
 	//set up mqtt
 	mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
-	mqttClient.setCallback(callback);
-	mqttClient.setBufferSize(1024);
 	while (!mqttClient.connected()) {
-		if (mqttClient.connect(ESP_CONTROLLER_1_TOPIC)) {
-			mqttClient.subscribe(IRRAW_TOPIC);
-			mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "WiFi and MQTT are up!");
+		if (mqttClient.connect(ESP_CONTROLLER_2_TOPIC)) {
+			mqttClient.publish(ESP_CONTROLLER_2_TOPIC, "WiFi and MQTT are up!");
 			delay(100);
 		} else {
 			delay(2000);
@@ -44,6 +46,12 @@ void loop() {
 
 	long now = millis();
 	if (now - sensorTimer > sensorDelay) {
+		if(digitalRead(mc38Pin) == LOW) {
+			sprintf(msg, "{\"door1\": \"closed\"}");
+		} else {
+			sprintf(msg, "{\"door1\": \"open\"}");
+		}
+		mqttClient.publish(MC38_1_TOPIC, msg);
 		sensorTimer = now;
 	}
 
@@ -56,9 +64,8 @@ void reconnect() {
 		delay(500);
 	}
 	while (!mqttClient.connected()) {
-		if (mqttClient.connect(ESP_CONTROLLER_1_TOPIC)) {
-			mqttClient.subscribe(IRRAW_TOPIC);
-			mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "WiFi and MQTT are up!");
+		if (mqttClient.connect(ESP_CONTROLLER_2_TOPIC)) {
+			mqttClient.publish(ESP_CONTROLLER_2_TOPIC, "WiFi and MQTT are up!");
 			delay(100);
 		} else {
 			delay(2000);
