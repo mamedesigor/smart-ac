@@ -1,4 +1,6 @@
 #include <PubSubClient.h>
+#include <Wire.h>
+#include <HTU2xD_SHT2x_Si70xx.h>
 #include "WiFi.h"
 #include "config.h"
 
@@ -11,6 +13,10 @@ PubSubClient mqttClient(wifiClient);
 char msg[100];
 
 int mc38Pin = 33;
+
+HTU2xD_SHT2x_SI70xx htu21d(HTU2xD_SENSOR, HUMD_12BIT_TEMP_14BIT);
+bool temperatureWasRead = false;
+float temperatureValue, compensatedHumidityValue;
 
 long sensorTimer = 0;
 int sensorDelay = 5000;
@@ -37,6 +43,13 @@ void setup() {
 			delay(2000);
 		}
 	}
+
+	//set up htu21d
+	while (htu21d.begin() != true) {
+		mqttClient.publish(ESP_CONTROLLER_2_TOPIC, "HTU21D not connected, fail or VDD < +2.25v");
+		delay(5000);
+	}
+	mqttClient.publish(ESP_CONTROLLER_2_TOPIC, "HTU21D OK");
 }
 
 void loop() {
@@ -45,14 +58,56 @@ void loop() {
 	mqttClient.loop();
 
 	long now = millis();
-	if (now - sensorTimer > sensorDelay) {
-		if(digitalRead(mc38Pin) == LOW) {
-			sprintf(msg, "{\"door1\": \"closed\"}");
-		} else {
-			sprintf(msg, "{\"door1\": \"open\"}");
+	if (now - sensorTimer > sensorDelay - 500) {
+
+		//read temperature
+		if(!temperatureWasRead) {
+			temperatureWasRead = true;
+			temperatureValue = htu21d.readTemperature();
+
+			if (temperatureValue == HTU2XD_SHT2X_SI70XX_ERROR) {
+				mqttClient.publish(ESP_CONTROLLER_2_TOPIC, "[htu21d] error reading temperature");
+
+				if (htu21d.voltageStatus() == false) {
+					mqttClient.publish(ESP_CONTROLLER_2_TOPIC, "[htu21d] power FAIL, VDD < +2.25v");
+				}
+
+				htu21d.softReset();
+				htu21d.setHeater(false);
+				htu21d.setResolution(HUMD_12BIT_TEMP_14BIT);
+			}
 		}
-		mqttClient.publish(MC38_1_TOPIC, msg);
-		sensorTimer = now;
+
+		if (now - sensorTimer > sensorDelay) {
+
+			//read humidity
+			temperatureWasRead = false;
+			if (temperatureValue != HTU2XD_SHT2X_SI70XX_ERROR) {
+				compensatedHumidityValue = htu21d.getCompensatedHumidity(temperatureValue);
+
+				if (compensatedHumidityValue == HTU2XD_SHT2X_SI70XX_ERROR) {
+					mqttClient.publish(ESP_CONTROLLER_2_TOPIC, "[htu21d] error reading humidity");
+
+					if (htu21d.voltageStatus() == false) {
+						mqttClient.publish(ESP_CONTROLLER_2_TOPIC, "[htu21d] power FAIL, VDD < +2.25v");
+					}
+				} else {
+
+					//publish htu21d data
+					sprintf(msg, "{\"temp2\": \"%.1f\", \"humidity\": \"%.1f\"}", temperatureValue, compensatedHumidityValue);
+					mqttClient.publish(HTU21D_TOPIC, msg);
+				}
+			}
+
+			//read mc38
+			if(digitalRead(mc38Pin) == LOW) {
+				sprintf(msg, "{\"door1\": \"closed\"}");
+			} else {
+				sprintf(msg, "{\"door1\": \"open\"}");
+			}
+			mqttClient.publish(MC38_1_TOPIC, msg);
+			sensorTimer = now;
+		}
 	}
 
 	blinkLed();
