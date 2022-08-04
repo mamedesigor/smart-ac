@@ -12,6 +12,8 @@ WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
 char msg[100];
 
+int hcsr501Pin = 35;
+
 int mc38Pin = 33;
 
 HTU2xD_SHT2x_SI70xx htu21d(HTU2xD_SENSOR, HUMD_12BIT_TEMP_14BIT);
@@ -24,9 +26,6 @@ int sensorDelay = 5000;
 void setup() {
 	//set up led indicator
 	pinMode(ledPin, OUTPUT);
-
-	//set up mc38
-	pinMode(mc38Pin, INPUT);
 
 	//wifi
 	delay(2000);
@@ -43,6 +42,14 @@ void setup() {
 			delay(2000);
 		}
 	}
+
+	//set up hcsr501
+	pinMode(hcsr501Pin, INPUT);
+	mqttClient.publish(ESP_CONTROLLER_2_TOPIC, "HCSR501 OK");
+
+	//set up mc38
+	pinMode(mc38Pin, INPUT);
+	mqttClient.publish(ESP_CONTROLLER_2_TOPIC, "MC38 OK");
 
 	//set up htu21d
 	while (htu21d.begin() != true) {
@@ -99,6 +106,14 @@ void loop() {
 				}
 			}
 
+			//read hcsr501
+			if(digitalRead(hcsr501Pin) == LOW) {
+				sprintf(msg, "{\"motion1\": \"not detected\"}");
+			} else {
+				sprintf(msg, "{\"motion1\": \"detected\"}");
+			}
+			mqttClient.publish(HCSR501_1_TOPIC, msg);
+
 			//read mc38
 			if(digitalRead(mc38Pin) == LOW) {
 				sprintf(msg, "{\"door1\": \"closed\"}");
@@ -106,6 +121,7 @@ void loop() {
 				sprintf(msg, "{\"door1\": \"open\"}");
 			}
 			mqttClient.publish(MC38_1_TOPIC, msg);
+
 			sensorTimer = now;
 		}
 	}
