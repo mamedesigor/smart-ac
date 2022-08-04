@@ -10,8 +10,8 @@ function update_fields() {
 			document.getElementById("humidity").innerHTML = msg.humidity;
 			document.getElementById("eco2").innerHTML = msg.eco2;
 			document.getElementById("tvoc").innerHTML = msg.tvoc;
-			document.getElementById("presence1").innerHTML = msg.presence1;
-			document.getElementById("presence2").innerHTML = msg.presence2;
+			document.getElementById("motion1").innerHTML = msg.motion1;
+			document.getElementById("motion2").innerHTML = msg.motion2;
 			document.getElementById("pm25").innerHTML = msg.pm25;
 			document.getElementById("pm10").innerHTML = msg.pm10;
 			document.getElementById("door1").innerHTML = msg.door1;
