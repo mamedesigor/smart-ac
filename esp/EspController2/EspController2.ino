@@ -13,6 +13,7 @@ PubSubClient mqttClient(wifiClient);
 char msg[100];
 
 int hcsr501Pin = 35;
+bool motionDetected = false;
 
 int mc38Pin = 33;
 
@@ -64,6 +65,11 @@ void loop() {
 
 	mqttClient.loop();
 
+	//read hcsr501
+	if(digitalRead(hcsr501Pin) == HIGH) {
+		motionDetected = true;
+	}
+
 	long now = millis();
 	if (now - sensorTimer > sensorDelay - 500) {
 
@@ -106,12 +112,13 @@ void loop() {
 				}
 			}
 
-			//read hcsr501
-			if(digitalRead(hcsr501Pin) == LOW) {
-				sprintf(msg, "{\"motion1\": \"not detected\"}");
-			} else {
+			//publish hcsr501
+			if(motionDetected) {
 				sprintf(msg, "{\"motion1\": \"detected\"}");
+			} else {
+				sprintf(msg, "{\"motion1\": \"not detected\"}");
 			}
+			motionDetected = false;
 			mqttClient.publish(HCSR501_1_TOPIC, msg);
 
 			//read mc38
