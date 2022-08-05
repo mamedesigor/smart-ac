@@ -4,7 +4,7 @@ function update_fields() {
 			return response.json();
 		}).then(function (msg) {
 			document.getElementById("temp1").innerHTML = msg.temp1;
-			document.getElementById("amps").innerHTML = msg.amps1;
+			document.getElementById("amps").innerHTML = msg.amps;
 			document.getElementById("temp2").innerHTML = msg.temp2;
 			document.getElementById("pressure").innerHTML = msg.pressure;
 			document.getElementById("humidity").innerHTML = msg.humidity;
