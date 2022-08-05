@@ -1,7 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 import json
 
-data = {'temp1':'x'}
+data = {}
 
 app = Flask(__name__)
 
