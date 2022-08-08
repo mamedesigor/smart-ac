@@ -59,9 +59,11 @@ def add_to_db():
             if mqtt_topic == config.BMP280_TOPIC:
                 list = buffer[mqtt_topic]
                 for item in list:
-                    temp1 = item.get("temp1")
-                    pressure = item.get("pressure")
                     timestamp = item.get("timestamp")
+                    temp1 = item.get("temp1")
+                    last_measurements.update({"temp1": "temp1=" + temp1 + "ºC<br>" + timestamp})
+                    pressure = item.get("pressure")
+                    last_measurements.update({"pressure": "pressure=" + pressure + "hPa<br>" + timestamp})
                     cursor.execute("CREATE TABLE IF NOT EXISTS " + config.BMP280_TOPIC + " (temp1 real, pressure real, timestamp text)")
                     cursor.execute("INSERT INTO " + config.BMP280_TOPIC + " VALUES(?,?,?)",(temp1, pressure, timestamp))
                     log(mqtt_topic + " added to db temp1: " + temp1 + " pressure: " + pressure)
