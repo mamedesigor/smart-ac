@@ -149,10 +149,10 @@ bool bmp280Read() {
 }
 
 bool ccs811Read() {
-	uint16_t eco2, etvoc, errstat, raw;
-	ccs811.read(&eco2, &etvoc, &errstat, &raw);
+	uint16_t eco2, tvoc, errstat, raw;
+	ccs811.read(&eco2, &tvoc, &errstat, &raw);
 	if ( errstat == CCS811_ERRSTAT_OK ) {
-		sprintf(msg, "{\"eco2\": \"%hu\", \"etvoc\": \"%hu\"}", eco2, etvoc);
+		sprintf(msg, "{\"eco2\": \"%hu\", \"tvoc\": \"%hu\"}", eco2, tvoc);
 		return true;
 	} else if ( errstat == CCS811_ERRSTAT_OK_NODATA ) {
 		mqttClient.publish(ESP_CONTROLLER_1_TOPIC, "ccs811: waiting for (new) data");
