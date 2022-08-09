@@ -86,7 +86,7 @@ def add_to_db():
                     timestamp = item.get("timestamp")
                     motion1 = item.get("motion1")
                     last_measurements.update({"motion1": "motion1=" + motion1 + "<br>" + timestamp})
-                    cursor.execute("CREATE TABLE IF NOT EXISTS " + config.HCSR501_1_TOPIC + " (motion1 real, timestamp text)")
+                    cursor.execute("CREATE TABLE IF NOT EXISTS " + config.HCSR501_1_TOPIC + " (motion1 text, timestamp text)")
                     cursor.execute("INSERT INTO " + config.HCSR501_1_TOPIC + " VALUES(?,?)",(motion1, timestamp))
                     log(mqtt_topic + " added to db motion1: " + motion1)
 
