@@ -114,6 +114,17 @@ def add_to_db():
                     cursor.execute("INSERT INTO " + config.HTU21D_TOPIC + " VALUES(?,?,?)",(temp2, humidity, timestamp))
                     log(mqtt_topic + " added to db temp2: " + temp2 + " humidity: " + humidity)
 
+            ### MC38_2 ###
+            if mqtt_topic == config.MC38_2_TOPIC:
+                list = buffer[mqtt_topic]
+                for item in list:
+                    timestamp = item.get("timestamp")
+                    door2 = item.get("door2")
+                    last_measurements.update({"door2": "door2=" + door2 + "<br>" + timestamp})
+                    cursor.execute("CREATE TABLE IF NOT EXISTS " + config.MC38_2_TOPIC + " (door2 text, timestamp text)")
+                    cursor.execute("INSERT INTO " + config.MC38_2_TOPIC + " VALUES(?,?)",(door2, timestamp))
+                    log(mqtt_topic + " added to db door2: " + door2)
+
 
             buffer[mqtt_topic].clear()
     db.commit();
