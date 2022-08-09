@@ -11,7 +11,10 @@ def requestfn():
         return jsonify(data)
 
     if request.method == 'POST':
-        data = json.load(open('data.json'))
+        try:
+            data = json.load(open('data.json'))
+        except:
+            data = {}
         for key in request.json:
             data.update({key: request.json[key]})
         with open('data.json', 'w') as f:
