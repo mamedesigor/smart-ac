@@ -90,6 +90,17 @@ def add_to_db():
                     cursor.execute("INSERT INTO " + config.HCSR501_1_TOPIC + " VALUES(?,?)",(motion1, timestamp))
                     log(mqtt_topic + " added to db motion1: " + motion1)
 
+            ### MC38_1 ###
+            if mqtt_topic == config.MC38_1_TOPIC:
+                list = buffer[mqtt_topic]
+                for item in list:
+                    timestamp = item.get("timestamp")
+                    door1 = item.get("door1")
+                    last_measurements.update({"door1": "door1=" + door1 + "<br>" + timestamp})
+                    cursor.execute("CREATE TABLE IF NOT EXISTS " + config.MC38_1_TOPIC + " (door1 text, timestamp text)")
+                    cursor.execute("INSERT INTO " + config.MC38_1_TOPIC + " VALUES(?,?)",(door1, timestamp))
+                    log(mqtt_topic + " added to db door1: " + door1)
+
 
             buffer[mqtt_topic].clear()
     db.commit();
