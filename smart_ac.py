@@ -72,8 +72,9 @@ def add_to_db():
             if mqtt_topic == config.SCT013_TOPIC:
                 list = buffer[mqtt_topic]
                 for item in list:
-                    amps = item.get("amps")
                     timestamp = item.get("timestamp")
+                    amps = item.get("amps")
+                    last_measurements.update({"amps": "amps=" + amps + "A<br>" + timestamp})
                     cursor.execute("CREATE TABLE IF NOT EXISTS " + config.SCT013_TOPIC + " (amps real, timestamp text)")
                     cursor.execute("INSERT INTO " + config.SCT013_TOPIC + " VALUES(?,?)",(amps, timestamp))
                     log(mqtt_topic + " added to db amps: " + amps)
