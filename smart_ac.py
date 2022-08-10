@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from threading import Thread
 import paho.mqtt.client as mqtt
 from datetime import datetime
 import time
@@ -7,6 +8,9 @@ import json
 import config
 import sqlite3
 import requests
+import board
+import adafruit_bh1750
+
 
 buffer = config.buffer
 
@@ -24,6 +28,12 @@ def on_message(client, userdata, msg):
     json_string = json.loads(msg.payload.decode("utf-8"))
     json_string.update({"timestamp": str(timestamp)})
     buffer.get(msg.topic).append(json_string)
+
+def start_bh1750():
+    while True:
+        time.sleep(5)
+        reading = '{"luxes": "' + str("%.2f"%bh1750.lux) + '"}'
+        client.publish(config.BH1750_TOPIC, reading)
 
 def send_post_request():
     url = 'https://www.arcondicionado.cf/request'
@@ -169,6 +179,12 @@ client.on_connect = on_connect
 client.on_message = on_message
 client.connect(config.MQTT_BROKER, config.MQTT_PORT, 60)
 client.loop_start()
+
+i2c = board.I2C()
+bh1750 = adafruit_bh1750.BH1750(i2c)
+
+bh1750_thread = Thread(target=start_bh1750)
+bh1750_thread.start()
 
 while True:
     add_to_db()
