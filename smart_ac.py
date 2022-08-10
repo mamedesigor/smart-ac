@@ -149,6 +149,17 @@ def add_to_db():
                     cursor.execute("INSERT INTO " + config.HCSR501_2_TOPIC + " VALUES(?,?)",(motion2, timestamp))
                     log(mqtt_topic + " added to db motion2: " + motion2)
 
+            ### BH1750 ###
+            if mqtt_topic == config.BH1750_TOPIC:
+                list = buffer[mqtt_topic]
+                for item in list:
+                    timestamp = item.get("timestamp")
+                    luxes = item.get("luxes")
+                    last_measurements.update({"luxes": "luxes=" + luxes + "lx<br>" + timestamp})
+                    cursor.execute("CREATE TABLE IF NOT EXISTS " + config.BH1750_TOPIC + " (luxes real, timestamp text)")
+                    cursor.execute("INSERT INTO " + config.BH1750_TOPIC + " VALUES(?,?)",(luxes, timestamp))
+                    log(mqtt_topic + " added to db luxes: " + luxes)
+
             buffer[mqtt_topic].clear()
     db.commit();
     db.close();
