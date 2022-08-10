@@ -125,6 +125,18 @@ def add_to_db():
                     cursor.execute("INSERT INTO " + config.MC38_2_TOPIC + " VALUES(?,?)",(door2, timestamp))
                     log(mqtt_topic + " added to db door2: " + door2)
 
+            ### SDS011 ###
+            if mqtt_topic == config.SDS011_TOPIC:
+                list = buffer[mqtt_topic]
+                for item in list:
+                    timestamp = item.get("timestamp")
+                    pm10 = item.get("pm10")
+                    last_measurements.update({"pm10": "pm10=" + pm10 + "µg/m³<br>" + timestamp})
+                    pm25 = item.get("pm25")
+                    last_measurements.update({"pm25": "pm25=" + pm25 + "µg/m³<br>" + timestamp})
+                    cursor.execute("CREATE TABLE IF NOT EXISTS " + config.SDS011_TOPIC + " (pm10 real, pm25 real, timestamp text)")
+                    cursor.execute("INSERT INTO " + config.SDS011_TOPIC + " VALUES(?,?,?)",(pm10, pm25, timestamp))
+                    log(mqtt_topic + " added to db pm10: " + pm10 + " pm25: " + pm25)
 
             buffer[mqtt_topic].clear()
     db.commit();
