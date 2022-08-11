@@ -9,6 +9,7 @@ import config
 import sqlite3
 import requests
 import board
+import serial
 import adafruit_bh1750
 
 
@@ -34,6 +35,19 @@ def start_bh1750():
         time.sleep(5)
         reading = '{"luxes": "' + str("%.2f"%bh1750.lux) + '"}'
         client.publish(config.BH1750_TOPIC, reading)
+
+def start_sds011():
+    while True:
+        data = []
+        for index in range(0,10):
+            datum = sds011.read()
+            data.append(datum)
+
+        pmtwofive = int.from_bytes(b''.join(data[2:4]), byteorder='little') / 10
+        pmten = int.from_bytes(b''.join(data[4:6]), byteorder='little') / 10
+        reading = '{"pm10": "' + str(pmten) + '", "pm25": "' + str(pmtwofive) + '"}'
+        client.publish(config.SDS011_TOPIC, reading)
+        time.sleep(10)
 
 def send_post_request():
     url = 'https://www.arcondicionado.cf/request'
@@ -182,9 +196,12 @@ client.loop_start()
 
 i2c = board.I2C()
 bh1750 = adafruit_bh1750.BH1750(i2c)
-
 bh1750_thread = Thread(target=start_bh1750)
 bh1750_thread.start()
+
+sds011 = serial.Serial('/dev/ttyUSB0')
+sds011_thread = Thread(target=start_sds011)
+sds011_thread.start()
 
 while True:
     add_to_db()
