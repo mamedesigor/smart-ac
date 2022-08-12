@@ -231,7 +231,7 @@ while True:
     #perform backup hourly
     now = datetime.now()
     backup_timer = (now - last_backup).total_seconds()
-    if backup_timer > 20 and not exists("sqlite3bkp.db"):
+    if backup_timer > 3600 and not exists("sqlite3bkp.db"):
         shutil.copyfile("sqlite3.db", "sqlite3bkp.db")
         log("[BACKUP] " + str(backup_timer))
         last_backup = now
