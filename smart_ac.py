@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from gpiozero import MotionSensor
 from threading import Thread
 import paho.mqtt.client as mqtt
 from datetime import datetime
@@ -54,6 +55,15 @@ def start_sds011():
         reading = '{"pm10": "' + str(pmten) + '", "pm25": "' + str(pmtwofive) + '"}'
         client.publish(config.SDS011_TOPIC, reading)
         time.sleep(10)
+
+def start_hcsr501_2():
+    while True:
+        hcsr501_2.wait_for_motion()
+        reading = '{"motion2": "detected"}'
+        client.publish(config.HCSR501_2_TOPIC, reading)
+        hcsr501_2.wait_for_no_motion()
+        reading = '{"motion2": "not detected"}'
+        client.publish(config.HCSR501_2_TOPIC, reading)
 
 def send_post_request():
     url = 'https://www.arcondicionado.cf/request'
@@ -208,6 +218,10 @@ bh1750_thread.start()
 sds011 = serial.Serial('/dev/ttyUSB0')
 sds011_thread = Thread(target=start_sds011)
 sds011_thread.start()
+
+hcsr501_2 = MotionSensor(4)
+hcsr501_2_thread = Thread(target=start_hcsr501_2)
+hcsr501_2_thread.start()
 
 while True:
     add_to_db()
