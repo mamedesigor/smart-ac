@@ -20,7 +20,7 @@ buffer = config.buffer
 
 last_measurements = {}
 
-backup_timer = 0
+last_backup = datetime.now()
 
 loop_time = 3
 
@@ -229,8 +229,9 @@ while True:
     time.sleep(loop_time)
 
     #perform backup hourly
-    backup_timer = backup_timer + loop_time
-    if backup_timer > 3600 and not exists("sqlite3bkp.db"):
+    now = datetime.now()
+    backup_timer = (now - last_backup).total_seconds()
+    if backup_timer > 20 and not exists("sqlite3bkp.db"):
         shutil.copyfile("sqlite3.db", "sqlite3bkp.db")
-        log("[BACKUP]")
-        backup_timer = 0
+        log("[BACKUP] " + str(backup_timer))
+        last_backup = now
