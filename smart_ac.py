@@ -11,11 +11,17 @@ import requests
 import board
 import serial
 import adafruit_bh1750
+import shutil
+from os.path import exists
 
 
 buffer = config.buffer
 
 last_measurements = {}
+
+backup_timer = 0
+
+loop_time = 3
 
 def log(msg):
     print("["+ str(datetime.now().replace(microsecond=0)) + "] " + msg)
@@ -206,4 +212,11 @@ sds011_thread.start()
 while True:
     add_to_db()
     send_post_request()
-    time.sleep(3)
+    time.sleep(loop_time)
+
+    #perform backup hourly
+    backup_timer = backup_timer + loop_time
+    if backup_timer > 3600 and not exists("sqlite3bkp.db"):
+        shutil.copyfile("sqlite3.db", "sqlite3bkp.db")
+        log("[BACKUP]")
+        backup_timer = 0
