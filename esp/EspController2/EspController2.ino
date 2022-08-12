@@ -7,6 +7,8 @@
 int ledPin = 32;
 bool ledOn = false;
 long ledTimer = 0;
+long ledEnabledTimer = 0;
+bool ledEnabled = true;
 
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
@@ -133,7 +135,7 @@ void loop() {
 		}
 	}
 
-	blinkLed();
+	if(ledEnabled) blinkLed();
 }
 
 void reconnect() {
@@ -153,17 +155,22 @@ void reconnect() {
 
 void blinkLed() {
 	long now = millis();
-	if(!ledOn) {
-		if (now - ledTimer > 1000) {
-			ledTimer = now;
-			digitalWrite(ledPin, HIGH);
-			ledOn = true;
-		}
+	if (now - ledEnabledTimer > 20000) {
+		ledEnabled = false;
+		digitalWrite(ledPin, LOW);
 	} else {
-		if (now - ledTimer > 50) {
-			ledTimer = now;
-			digitalWrite(ledPin, LOW);
-			ledOn = false;
+		if(!ledOn) {
+			if (now - ledTimer > 1000) {
+				ledTimer = now;
+				digitalWrite(ledPin, HIGH);
+				ledOn = true;
+			}
+		} else {
+			if (now - ledTimer > 50) {
+				ledTimer = now;
+				digitalWrite(ledPin, LOW);
+				ledOn = false;
+			}
 		}
 	}
 }
