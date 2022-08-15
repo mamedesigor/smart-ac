@@ -62,8 +62,6 @@ def start_hcsr501_2():
         reading = '{"motion2": "detected"}'
         client.publish(config.HCSR501_2_TOPIC, reading)
         hcsr501_2.wait_for_no_motion()
-        reading = '{"motion2": "not detected"}'
-        client.publish(config.HCSR501_2_TOPIC, reading)
 
 def send_post_request():
     url = 'https://www.arcondicionado.cf/request'
