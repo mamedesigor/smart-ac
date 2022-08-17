@@ -60,6 +60,10 @@ with open("config.h", "r") as config:
                 HCSR501_2_TOPIC = splitted_line[i+1].replace('"', '')
                 MQTT_TOPICS.append((HCSR501_2_TOPIC, 0))
                 buffer.update({HCSR501_2_TOPIC: []})
+            elif word == "INSTRUCTIONS_TOPIC":
+                INSTRUCTIONS_TOPIC = splitted_line[i+1].replace('"', '')
+                MQTT_TOPICS.append((INSTRUCTIONS_TOPIC, 0))
+                buffer.update({INSTRUCTIONS_TOPIC: []})
             elif word == "ESP_CONTROLLER_1_TOPIC":
                 ESP_CONTROLLER_1_TOPIC = splitted_line[i+1].replace('"', '')
             elif word == "ESP_CONTROLLER_2_TOPIC":
@@ -70,3 +74,5 @@ with open("config.h", "r") as config:
                 RPI_TOPIC = splitted_line[i+1].replace('"', '')
             elif word == "IRRAW_TOPIC":
                 IRRAW_TOPIC = splitted_line[i+1].replace('"', '')
+            elif word == "IRRAW_CODE":
+                IRRAW_CODE = splitted_line[i+1].replace('"', '')

@@ -24,8 +24,82 @@ last_backup = datetime.now()
 
 loop_time = 3
 
+controller_data = {}
+
 def log(msg):
     print("["+ str(datetime.now().replace(microsecond=0)) + "] " + msg)
+
+def deserialize_datetime(dt):
+    line = dt.split()
+    date = line[0].split('-')
+    time = line[1].split(':')
+
+    year = int(date[0])
+    month = int(date[1])
+    day = int(date[2])
+    hour = int(time[0])
+    minute = int(time[1])
+    second = int(time[2])
+    return datetime(year, month, day, hour, minute, second)
+
+def controller_update():
+    instructions_delay = 3600
+    poweroff_maybe = False
+    poweroff = False
+    now = datetime.now()
+
+    # verify if last instruction was more than 1h ago
+    if "instructions_poweroff_timestamp" in controller_data:
+        instructions_poweroff_timestamp = deserialize_datetime(controller_data.get("instructions_poweroff_timestamp"))
+        instructions_timer = (now - instructions_poweroff_timestamp).total_seconds()
+        if instructions_timer > instructions_delay:
+            poweroff_maybe = True
+    else:
+        poweroff_maybe = True
+
+    if(poweroff_maybe):
+        # door1 open more than 3 minutes
+        if "door1_closed_timestamp" in controller_data:
+            door1_closed_timestamp = deserialize_datetime(controller_data.get("door1_closed_timestamp"))
+            door1_closed_timer = (now - door1_closed_timestamp).total_seconds()
+            if door1_closed_timer > 180:
+                poweroff_ac("door1 open " + str(door1_closed_timer))
+                poweroff = True
+
+        # door2 open more than 3 minutes
+        if "door2_closed_timestamp" in controller_data and not poweroff:
+            door2_closed_timestamp = deserialize_datetime(controller_data.get("door2_closed_timestamp"))
+            door2_closed_timer = (now - door2_closed_timestamp).total_seconds()
+            if door2_closed_timer > 180:
+                poweroff_ac("door2 open " + str(door2_closed_timer))
+                poweroff = True
+
+        # no motion detected in 1 hour
+        if "motion2_timestamp" in controller_data and not poweroff:
+            motion2_timestamp = deserialize_datetime(controller_data.get("motion2_timestamp"))
+            motion2_timer = (now - motion2_timestamp).total_seconds()
+            if motion2_timer > 3600:
+                poweroff_ac("motion2")
+                poweroff = True
+
+        # ac on between 11:30 and 12:30
+        if not poweroff:
+            time1130 = datetime(now.year, now.month, now.day, 11, 30)
+            time1230 = datetime(now.year, now.month, now.day, 12, 30)
+            if now > time1130 and now < time1230:
+                poweroff_ac(">1130 <1230")
+                poweroff = True
+
+        # ac on past 17:30
+        if not poweroff:
+            time1730 = datetime(now.year, now.month, now.day, 17, 30)
+            if now > time1730:
+                poweroff_ac(">1730")
+
+def poweroff_ac(msg):
+    client.publish(config.IRRAW_TOPIC, config.IRRAW_CODE)
+    client.publish(config.INSTRUCTIONS_TOPIC, '{"instructions": "POWEROFF"}')
+    log("poweroff ac " + str(msg))
 
 def on_connect(client, userdata, flags, rc):
     log("Connected with result code " + str(rc))
@@ -138,6 +212,8 @@ def add_to_db():
                     cursor.execute("CREATE TABLE IF NOT EXISTS " + config.MC38_1_TOPIC + " (door1 text, timestamp text)")
                     cursor.execute("INSERT INTO " + config.MC38_1_TOPIC + " VALUES(?,?)",(door1, timestamp))
                     log(mqtt_topic + " added to db door1: " + door1)
+                    if door1 == "closed":
+                        controller_data.update({"door1_closed_timestamp": timestamp})
 
             ### HTU21D ###
             if mqtt_topic == config.HTU21D_TOPIC:
@@ -162,6 +238,8 @@ def add_to_db():
                     cursor.execute("CREATE TABLE IF NOT EXISTS " + config.MC38_2_TOPIC + " (door2 text, timestamp text)")
                     cursor.execute("INSERT INTO " + config.MC38_2_TOPIC + " VALUES(?,?)",(door2, timestamp))
                     log(mqtt_topic + " added to db door2: " + door2)
+                    if door2 == "closed":
+                        controller_data.update({"door2_closed_timestamp": timestamp})
 
             ### SDS011 ###
             if mqtt_topic == config.SDS011_TOPIC:
@@ -186,6 +264,7 @@ def add_to_db():
                     cursor.execute("CREATE TABLE IF NOT EXISTS " + config.HCSR501_2_TOPIC + " (motion2 text, timestamp text)")
                     cursor.execute("INSERT INTO " + config.HCSR501_2_TOPIC + " VALUES(?,?)",(motion2, timestamp))
                     log(mqtt_topic + " added to db motion2: " + motion2)
+                    controller_data.update({"motion2_timestamp": timestamp})
 
             ### BH1750 ###
             if mqtt_topic == config.BH1750_TOPIC:
@@ -197,6 +276,18 @@ def add_to_db():
                     cursor.execute("CREATE TABLE IF NOT EXISTS " + config.BH1750_TOPIC + " (luxes real, timestamp text)")
                     cursor.execute("INSERT INTO " + config.BH1750_TOPIC + " VALUES(?,?)",(luxes, timestamp))
                     log(mqtt_topic + " added to db luxes: " + luxes)
+
+            ### INSTRUCTIONS ###
+            if mqtt_topic == config.INSTRUCTIONS_TOPIC:
+                list = buffer[mqtt_topic]
+                for item in list:
+                    timestamp = item.get("timestamp")
+                    instructions = item.get("instructions")
+                    last_measurements.update({"instructions": "instructions=" + instructions + "<br>" + timestamp})
+                    cursor.execute("CREATE TABLE IF NOT EXISTS " + config.INSTRUCTIONS_TOPIC + " (instructions text, timestamp text)")
+                    cursor.execute("INSERT INTO " + config.INSTRUCTIONS_TOPIC + " VALUES(?,?)",(instructions, timestamp))
+                    log(mqtt_topic + " added to db instructions: POWEROFF")
+                    controller_data.update({"instructions_poweroff_timestamp": timestamp})
 
             buffer[mqtt_topic].clear()
     db.commit();
@@ -223,6 +314,7 @@ hcsr501_2_thread.start()
 
 while True:
     add_to_db()
+    controller_update()
     send_post_request()
     time.sleep(loop_time)
 
