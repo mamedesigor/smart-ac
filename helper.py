@@ -63,9 +63,11 @@ def send_request():
     requests.post(url, json = data)
 
 def read_db():
+    if len(sys.argv) < 2:
+        return
     db = sqlite3.connect("sqlite3.db")
     cursor = db.cursor()
-    cursor.execute("SELECT * FROM bmp280")
+    cursor.execute("SELECT * FROM " + sys.argv[1])
     print(cursor.fetchall())
     db.close()
 
@@ -74,4 +76,4 @@ def timed_function(function):
     function()
     print("--- %s seconds ---" % (time.time() - start_time))
 
-timed_function(send_request)
+timed_function(read_db)
