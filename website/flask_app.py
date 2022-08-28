@@ -1,7 +1,17 @@
 from flask import Flask, render_template, request, jsonify
 import json
+import matplotlib.pyplot as plt, mpld3
 
 app = Flask(__name__)
+
+@app.route('/plot')
+def plotfn():
+    x = [1,2,3,4]
+    y = [1,2,3,4]
+    plt.plot(x, y)
+    fig = plt.figure(1)
+    html_graph = mpld3.fig_to_html(fig)
+    return html_graph
 
 @app.route('/request', methods=['GET', 'POST'])
 def requestfn():
