@@ -1,3 +1,6 @@
+# The lines of code used for interfacing with sds011 belongs do Andrew Gregory
+# https://www.raspberrypi.com/news/monitor-air-quality-with-a-raspberry-pi/
+
 #!/usr/bin/env python3
 
 from gpiozero import MotionSensor
