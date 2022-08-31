@@ -67,6 +67,7 @@ function update_fields() {
 		});
 }
 
+update_fields();
 plot();
 
 setInterval(function(){
