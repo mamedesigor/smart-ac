@@ -31,6 +31,31 @@ table, th, td {
 			</tr>
 		</table>
 
+		<p class="center">
+			<label>Escolha a grandeza a ser plotada:</label>
+			<select id="select">
+				<option value="temp1">temp1</option>
+				<option value="amps">amps</option>
+				<option value="temp2">temp2</option>
+				<option value="pressure">pressure</option>
+				<option value="humidity">humidity</option>
+				<option value="eco2">eco2</option>
+				<option value="tvoc">tvoc</option>
+				<option value="motion1">motion1</option>
+				<option value="motion2">motion2</option>
+				<option value="pm25">pm25</option>
+				<option value="pm10">pm10</option>
+				<option value="door1">door1</option>
+				<option value="door2">door2</option>
+				<option value="luxes">luxes</option>
+				<option value="instructions">instructions</option>
+			</select>
+		</p>
+
+		<p class="center">
+			<button onclick="plot()">PLOT</button>
+		</p>
+
 		<div class="center" id="plot"></div>
 
 	</body>

@@ -7,7 +7,10 @@ function mpld3_load_lib(url, callback){
 	document.getElementsByTagName("head")[0].appendChild(s);
 }
 
-function plot(plot_query) {
+function plot() {
+	document.getElementById("plot").innerHTML = "";
+	var pq = document.getElementById("select").value;
+	plot_query = {"begin": "25-6-0", "end": "25-18-0", "pq": pq}
 	fetch('/plot?begin=' + plot_query.begin + '&end=' + plot_query.end + '&pq=' + plot_query.pq)
 		.then(function (response) {
 			return response.json();
@@ -64,8 +67,7 @@ function update_fields() {
 		});
 }
 
-plot_query = {"begin": "25-6-0", "end": "25-18-0", "pq": "amps"}
-plot(plot_query);
+plot();
 
 setInterval(function(){
 	update_fields();
