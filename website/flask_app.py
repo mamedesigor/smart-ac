@@ -143,9 +143,10 @@ def plotfn():
     plt.ylabel(y_label)
     plt.plot(x, y)
     fig = plt.figure(1)
-    html_graph = mpld3.fig_to_html(fig)
+    dict_graph = mpld3.fig_to_dict(fig)
+    dict_graph.update(width = 1200)
     fig.clear()
-    return html_graph
+    return dict_graph
 
 @app.route('/request', methods=['GET', 'POST'])
 def requestfn():
