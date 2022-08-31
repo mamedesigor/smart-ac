@@ -13,7 +13,6 @@ function plot(plot_query) {
 			return response.json();
 		}).then(function (data) {
 
-			console.log(data);
 			if(typeof(mpld3) !== "undefined" && mpld3._mpld3IsLoaded){
 				// already loaded: just create the figure
 				!function(mpld3){
