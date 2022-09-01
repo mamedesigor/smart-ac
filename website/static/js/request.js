@@ -9,9 +9,24 @@ function mpld3_load_lib(url, callback){
 
 function plot() {
 	document.getElementById("plot").innerHTML = "";
+	var begin = document.getElementById("begin").value;
+	var begin_splitted = begin.split("T");
+	var begin_date = begin_splitted[0].split("-");
+	var begin_day = begin_date[2];
+	var begin_time = begin_splitted[1].split(":");
+	var begin_hour = begin_time[0];
+	var begin_minute = begin_time[1];
+	var begin_formated = begin_day.concat("-", begin_hour, "-", begin_minute);
+	var end = document.getElementById("end").value;
+	var end_splitted = end.split("T");
+	var end_date = end_splitted[0].split("-");
+	var end_day = end_date[2];
+	var end_time = end_splitted[1].split(":");
+	var end_hour = end_time[0];
+	var end_minute = end_time[1];
+	var end_formated = end_day.concat("-", end_hour, "-", end_minute);
 	var pq = document.getElementById("select").value;
-	plot_query = {"begin": "25-6-0", "end": "25-18-0", "pq": pq}
-	fetch('/plot?begin=' + plot_query.begin + '&end=' + plot_query.end + '&pq=' + plot_query.pq)
+	fetch('/plot?begin=' + begin_formated + '&end=' + end_formated + '&pq=' + pq)
 		.then(function (response) {
 			return response.json();
 		}).then(function (data) {
